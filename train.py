@@ -17,6 +17,7 @@ import sys
 from torch.utils.tensorboard import SummaryWriter
 import torch.optim.lr_scheduler as lr_scheduler
 import datetime
+from sklearn.metrics import jaccard_score
 
 classes = ['background','1']
 # RGB color for each class
@@ -46,7 +47,7 @@ val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 model=model()
 model.to(device)
 
-criterion = torch.nn.BCELoss()
+criterion = torch.nn.CrossEntropyLoss()
 criterion.to(device)
 
 optimizer=torch.optim.Adam(model.parameters(), lr=0.0001)
@@ -57,17 +58,20 @@ total_test_step = 0
 for epoch in range(epochs):
     print(f'Epoch [{epoch+1}/{epochs}]')
     model.train()
+    total_miou = 0.0
     for data in tqdm(train_dataloader):
         imgs, targets = data
         imgs=imgs.to(device)
         targets=targets.to(device)
         outputs = model(imgs)
+        outputs = F.log_softmax(outputs, dim=1)
         loss = criterion(outputs, targets)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        
         total_train_step += 1
+        
+
         if total_train_step % 100 == 0:
             tb_writer.add_scalar('train_loss', loss.item(), total_train_step)
             print(f'Train Loss: {loss.item()}')
@@ -80,11 +84,19 @@ for epoch in range(epochs):
             imgs=imgs.to(device)
             targets=targets.to(device)
             outputs = model(imgs)
+            outputs = F.log_softmax(outputs, dim=1)
             loss = criterion(outputs, targets)
             total_test_loss += loss.item()
-
+            outputs = torch.argmax(outputs, dim=1)
+            for output, target in zip(outputs, targets):
+                miou=jaccard_score(target.numpy(),output.numpy(), average='macro')
+                total_miou += miou
+    miou = total_miou / len(val_dataloader)
+    total_test_loss /= len(val_dataloader)
     tb_writer.add_scalar('test_loss', total_test_loss, total_test_step)
+    tb_writer.add_scalar('test_miou', miou, total_test_step)
     print(f'Test Loss: {total_test_loss}')
+    print(f'Test miou: {miou}')
     total_test_step += 1
     torch.save(model.state_dict(), f'./model/model_{epoch}.pth')
     print('Model saved.')

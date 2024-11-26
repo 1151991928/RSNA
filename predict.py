@@ -35,12 +35,14 @@ def predict(model,path):
     output=model(img.cuda())
     pred = output.max(1)[1].squeeze().data.numpy()
     pred = cm[pred]
-    return pred
+    return img,pred
 
 state_dict=torch.load('./model.pth')
 model.load_state_dict(state_dict)
-a=predict(model,'C:/Users/armstrong/Desktop/sth/COVID_CXR/dataset/CXR/images/P_173.jpeg')
-plt.imshow(a)
+a,b=predict(model,'C:/Users/armstrong/Desktop/sth/COVID_CXR/dataset/CXR/images/P_173.jpeg')
+figs=plt.subplot(1, 2, 1)
+figs[0,0].imshow(a)
+figs[0,1].imshow(b)
 plt.axis('off')  # 关闭坐标轴
 plt.show()
 
