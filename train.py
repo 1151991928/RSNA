@@ -18,6 +18,10 @@ from torch.utils.tensorboard import SummaryWriter
 import torch.optim.lr_scheduler as lr_scheduler
 import datetime
 
+classes = ['background','1']
+# RGB color for each class
+colormap = [[0,0,0],[255,255,255]]
+
 if torch.cuda.is_available():
     device = torch.device('cuda')
 
@@ -85,4 +89,4 @@ for epoch in range(epochs):
     torch.save(model.state_dict(), f'./model/model_{epoch}.pth')
     print('Model saved.')
 
-    
+
