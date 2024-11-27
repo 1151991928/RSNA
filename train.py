@@ -12,7 +12,7 @@ from PIL import Image
 import torchvision.models as models
 from tqdm import tqdm
 from dataset import dataset
-from fcn import model
+from unet import UNet
 import sys
 from torch.utils.tensorboard import SummaryWriter
 import torch.optim.lr_scheduler as lr_scheduler
@@ -20,7 +20,8 @@ import datetime
 from sklearn.metrics import jaccard_score
 
 
-
+model=UNet(n_channels=3,n_classes=2)
+model.cuda()
 batch_size=8
 epochs=20
 
