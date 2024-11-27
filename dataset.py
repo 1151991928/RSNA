@@ -23,9 +23,11 @@ class my_dataset(Dataset):
         mask = Image.open(self.mask_path+'/'+self.mask[index]).convert('L')
         
         img = self.transform(img)
-        mask = self.transform(mask)
+        mask = transforms.Resize((256,256))(mask)
         
-        mask = torch.tensor(np.array(mask), dtype=torch.long)
+        mask=np.array(mask)
+        mask=np.where(mask>0,1,mask)
+        mask = torch.from_numpy(mask).long()
         return img,mask
 transform = transforms.Compose([
     transforms.Resize((256, 256)),

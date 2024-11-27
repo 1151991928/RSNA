@@ -20,7 +20,7 @@ import datetime
 from sklearn.metrics import jaccard_score
 
 
-model=UNet(n_channels=3,n_classes=2)
+model=UNet(n_channels=1,n_classes=2)
 model.cuda()
 batch_size=8
 epochs=20
@@ -50,6 +50,7 @@ for epoch in range(epochs):
     train_bar = tqdm(train_dataloader)
     for data in train_bar:
         imgs, targets = data
+        
         imgs=imgs.cuda()
         targets=targets.cuda()
         outputs = model(imgs)
