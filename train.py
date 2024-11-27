@@ -53,7 +53,7 @@ for epoch in range(epochs):
         imgs=imgs.cuda()
         targets=targets.cuda()
         outputs = model(imgs)
-        outputs = torch.softmax(outputs['out'],dim=1)
+        outputs = torch.softmax(outputs,dim=1)
         loss = criterion(outputs, targets)
         optimizer.zero_grad()
         loss.backward()
@@ -72,7 +72,7 @@ for epoch in range(epochs):
             imgs=imgs.cuda()
             targets=targets.cuda()
             outputs = model(imgs)
-            outputs = torch.softmax(outputs['out'],dim=1)
+            outputs = torch.softmax(outputs,dim=1)
             loss = criterion(outputs, targets)
             total_test_loss += loss.item()
             
