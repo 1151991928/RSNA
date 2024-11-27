@@ -18,7 +18,36 @@ from torch.utils.tensorboard import SummaryWriter
 import torch.optim.lr_scheduler as lr_scheduler
 import datetime
 from sklearn.metrics import jaccard_score
+import torch
+import torch.nn.functional as F
 
+def compute_iou(pred, target, num_classes):
+    """
+    计算IoU
+
+    参数:
+    pred: Tensor[N, H, W] 预测分割结果
+    target: Tensor[N, H, W] 真实标签
+    num_classes: int 类别数量
+
+    返回:
+    iou: Tensor[num_classes] 每个类别的IoU值
+    """
+    ious = []
+    pred = pred.argmax(dim=1)
+    pred = F.one_hot(pred, num_classes).permute(0, 3, 1, 2).float()
+    target = F.one_hot(target, num_classes).permute(0, 3, 1, 2).float()
+
+    for c in range(num_classes):
+        # 计算交集
+        intersection = torch.sum(pred[:, c, :, :] * target[:, c, :, :])
+        # 计算并集
+        union = torch.sum(pred[:, c, :, :]) + torch.sum(target[:, c, :, :]) - intersection
+        # 计算IoU
+        iou = intersection / (union + 1e-6)  # 防止除以0
+        ious.append(iou)
+
+    return torch.tensor(ious)
 
 model=UNet(n_channels=1,n_classes=2)
 model.cuda()
@@ -66,6 +95,7 @@ for epoch in range(epochs):
 
     model.eval()
     total_test_loss = 0
+    total_miou = 0
     test_bar=tqdm(val_dataloader)
     with torch.no_grad():
         for data in test_bar:
@@ -75,13 +105,15 @@ for epoch in range(epochs):
             outputs = model(imgs)
             outputs = torch.softmax(outputs,dim=1)
             loss = criterion(outputs, targets)
+            miou=compute_iou(outputs, targets, 2)
             total_test_loss += loss.item()
-            
+            total_miou += miou
     total_test_loss /= len(val_dataloader)
+    total_miou /= len(val_dataloader)
     tb_writer.add_scalar('test_loss', total_test_loss, total_test_step)
     
     print(f'Test Loss: {total_test_loss}')
-    
+    print(f'Test miou: {total_miou}')
     total_test_step += 1
     torch.save(model.state_dict(), f'./model/model_{epoch}.pth')
     print('Model saved.')
